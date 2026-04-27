@@ -1,0 +1,179 @@
+============================================================
+Project 6: Indicator Evaluation Report
+Xing Liu (xliu397)
+============================================================
+
+
+============================================================
+1. TECHNICAL INDICATORS
+============================================================
+
+------------------------------
+1.1 Relative Strength Index (RSI)
+------------------------------
+
+Description:
+
+The Relative Strength Index (RSI) is a momentum oscillator that measures the speed and magnitude of recent price changes to evaluate whether a stock is overbought or oversold. RSI values range from 0 to 100.
+
+The computation proceeds as follows: For each trading day, compute the daily price change as delta[t] = price[t] - price[t-1]. Separate the deltas into gains and losses: gain[t] = delta[t] if delta[t] > 0, else 0; loss[t] = |delta[t]| if delta[t] < 0, else 0. Compute the average gain and average loss over a lookback window of N days (N = 14 in this implementation) using a simple rolling mean. The Relative Strength is then RS[t] = avg_gain[t] / avg_loss[t], and finally RSI[t] = 100 - (100 / (1 + RS[t])).
+
+Why It Works:
+
+RSI captures the internal strength of a security's price action. When a stock has been rising consistently, the average gain dominates the average loss, pushing RSI toward 100. Conversely, sustained selling pressure pushes RSI toward 0. This oscillating behavior makes RSI effective at identifying potential reversal points where a stock's price has moved too far in one direction and may be due for a correction.
+
+Trade Decision / Strategy:
+- Long: Enter a long position when RSI crosses below 30 (oversold territory), indicating that selling pressure may be exhausted and a price rebound is likely.
+- Short: Enter a short position when RSI crosses above 70 (overbought territory), indicating that buying pressure may be exhausted and a price decline is likely.
+- Cash: Exit positions when RSI returns to the neutral zone between 30 and 70, suggesting no strong directional momentum.
+
+Trade Confirmation: RSI signals can be confirmed by checking whether the price is near a Bollinger Band boundary. For example, an RSI below 30 combined with price near the lower Bollinger Band strengthens the buy signal.
+
+Filters: A minimum holding period of several days can be applied after entering a position to avoid whipsaw trades caused by RSI rapidly oscillating near the threshold levels.
+
+Chart: See Figure 2 — JPM RSI Indicator (2008/1/1 to 2009/12/31). The chart shows RSI oscillating between 0 and 100, with clear dips below 30 and spikes above 70 corresponding to oversold and overbought conditions, respectively.
+
+
+------------------------------
+1.2 Momentum (Rate of Change)
+------------------------------
+
+Description:
+
+Momentum measures the rate of price change over a specified lookback period. It quantifies how much the price has changed relative to its value N days ago.
+
+The formula is: momentum[t] = (price[t] / price[t - N]) - 1, where N is the lookback window (N = 14 in this implementation). A positive momentum value indicates the price has increased over the lookback period, while a negative value indicates a decrease. The result is expressed as a fractional return (e.g., 0.10 represents a 10% increase).
+
+Why It Works:
+
+Momentum captures the tendency of stocks to continue moving in the same direction over short to medium time horizons — a phenomenon well-documented in financial literature as the "momentum effect." Stocks that have been rising tend to continue rising, and stocks that have been falling tend to continue falling, at least in the short term. However, extreme momentum values can also signal that a reversal is imminent, as prices may have overextended.
+
+Trade Decision / Strategy:
+- Long: Enter a long position when momentum crosses above 0 from below, indicating that the stock has transitioned from a declining phase to a rising phase and upward price movement is beginning.
+- Short: Enter a short position when momentum crosses below 0 from above, indicating a transition from rising to falling prices.
+- Cash: Move to cash when momentum is near zero and shows no clear directional trend, as the stock lacks strong conviction in either direction.
+
+Trade Confirmation: Momentum signals are stronger when confirmed by RSI. A positive momentum crossover combined with RSI rising from oversold levels provides a higher-confidence long signal.
+
+Filters: N/A.
+
+Chart: See Figure 3 — JPM Momentum Indicator (2008/1/1 to 2009/12/31). The chart displays momentum oscillating around zero, with sharp positive spikes in early 2009 reflecting the rapid price recovery following the 2008 financial crisis.
+
+
+------------------------------
+1.3 Price / EMA Ratio
+------------------------------
+
+Description:
+
+The Price/EMA ratio compares the current stock price to its Exponential Moving Average (EMA) over a specified lookback period. The EMA is a type of moving average that places greater weight on more recent data points, making it more responsive to new information than a Simple Moving Average (SMA).
+
+The EMA is computed recursively: EMA[t] = alpha * price[t] + (1 - alpha) * EMA[t-1], where alpha = 2 / (N + 1) and N is the lookback period (N = 14 in this implementation). The indicator value is: Price_EMA_Ratio[t] = price[t] / EMA[t].
+
+A ratio greater than 1.0 means the current price is above the EMA (bullish), while a ratio below 1.0 means the price is below the EMA (bearish). The magnitude of deviation from 1.0 indicates the strength of the trend.
+
+Why It Works:
+
+Moving averages smooth out short-term noise and reveal the underlying trend. When the price is significantly above the EMA, the stock may be overbought relative to its recent trend, and when it is significantly below, it may be oversold. The EMA's exponential weighting makes it more responsive to recent price changes than an SMA, allowing it to capture trend shifts more quickly. The ratio normalizes the relationship, making it comparable across different price levels and time periods.
+
+Trade Decision / Strategy:
+- Long: Enter a long position when the Price/EMA ratio crosses above 1.0 from below, signaling that the price has moved above its recent average trend and upward momentum is building.
+- Short: Enter a short position when the Price/EMA ratio crosses below 1.0 from above, indicating that the price has dropped below its trend and downward pressure is dominant.
+- Cash: Move to cash when the ratio oscillates tightly around 1.0 without a clear directional break, suggesting a ranging or indecisive market.
+
+Trade Confirmation: A Price/EMA crossover confirmed by a MACD histogram turning positive (for longs) or negative (for shorts) adds conviction to the trade signal.
+
+Filters: Small deviations from 1.0 (e.g., within +/- 0.02) can be filtered out to avoid false signals in low-volatility, sideways-moving markets.
+
+Chart: See Figure 4 — JPM EMA Indicator (2008/1/1 to 2009/12/31). The chart shows the Price/EMA ratio fluctuating around 1.0, with notable excursions above 1.1 and below 0.8 during the volatile 2008-2009 period.
+
+
+------------------------------
+1.4 MACD Histogram
+------------------------------
+
+Description:
+
+The Moving Average Convergence Divergence (MACD) is a trend-following momentum indicator that captures the relationship between two exponential moving averages of a stock's price. The standard MACD system consists of three components, but this implementation returns the MACD Histogram as a single results vector.
+
+The computation is as follows: First, calculate the MACD line as the difference between the 12-period EMA and the 26-period EMA: MACD_line[t] = EMA(price, 12)[t] - EMA(price, 26)[t]. Next, compute the Signal line as a 9-period EMA of the MACD line: Signal[t] = EMA(MACD_line, 9)[t]. Finally, the MACD Histogram is the difference: Histogram[t] = MACD_line[t] - Signal[t].
+
+The histogram oscillates around zero. Positive values indicate bullish momentum (MACD above signal), while negative values indicate bearish momentum (MACD below signal).
+
+Why It Works:
+
+MACD captures both trend direction and momentum by examining the convergence and divergence of short-term and long-term moving averages. When the short-term EMA (12-period) rises above the long-term EMA (26-period), it signals that recent price momentum is stronger than the longer-term trend — a bullish indication. The histogram, by measuring the distance between the MACD and its signal line, provides an early warning of momentum shifts. When the histogram begins shrinking toward zero from a positive value, it suggests bullish momentum is waning before a potential crossover occurs.
+
+Trade Decision / Strategy:
+- Long: Enter a long position when the MACD histogram crosses above 0, indicating that the MACD line has crossed above the signal line and bullish momentum is accelerating.
+- Short: Enter a short position when the MACD histogram crosses below 0, indicating that the MACD line has crossed below the signal line and bearish momentum is accelerating.
+- Cash: Move to cash when the histogram is near zero and oscillating without a decisive crossover, as this suggests the market lacks directional conviction.
+
+Trade Confirmation: MACD histogram signals can be confirmed by checking whether RSI is in a supporting zone (e.g., RSI < 50 for shorts, RSI > 50 for longs), ensuring that the broader momentum environment aligns with the trade.
+
+Filters: Very small histogram values close to zero (e.g., within +/- 0.05) can be ignored to avoid false crossover signals during choppy, sideways markets.
+
+Chart: See Figure 5 — JPM MACD Indicator (2008/1/1 to 2009/12/31). The chart shows the MACD histogram oscillating between approximately -1.2 and +1.0, with large negative values during the October 2008 crash and positive spikes during the subsequent recovery.
+
+
+------------------------------
+1.5 Bollinger Band Percentage (%B)
+------------------------------
+
+Description:
+
+Bollinger Band Percentage (%B) quantifies where the current price sits relative to the upper and lower Bollinger Bands. The Bollinger Bands are constructed from a Simple Moving Average (SMA) and the rolling standard deviation of prices over a lookback window.
+
+The computation is as follows: First, calculate the SMA over N days: SMA[t] = mean(price[t-N+1 : t]). Next, compute the rolling standard deviation: std[t] = stdev(price[t-N+1 : t]). The upper and lower Bollinger Bands are: Upper[t] = SMA[t] + 2 * std[t] and Lower[t] = SMA[t] - 2 * std[t]. Finally, Bollinger Band Percentage is: %B[t] = (price[t] - Lower[t]) / (Upper[t] - Lower[t]).
+
+A %B value of 1.0 means the price is at the upper band, 0.0 means it is at the lower band, and 0.5 means it is at the SMA. Values above 1.0 or below 0.0 indicate the price has broken outside the bands. A lookback of N = 14 days is used in this implementation.
+
+Why It Works:
+
+Bollinger Bands are grounded in the statistical concept that prices tend to revert to the mean. The bands expand during volatile periods and contract during calm periods, dynamically adapting to market conditions. When the price touches or exceeds the upper band (%B >= 1.0), it is statistically extended and may be due for a pullback. When it touches or falls below the lower band (%B <= 0.0), it may be oversold and due for a bounce. %B converts this information into a single, easily interpretable value that can be directly used as a buy/sell signal.
+
+Trade Decision / Strategy:
+- Long: Enter a long position when %B drops below 0 (price has fallen below the lower Bollinger Band), signaling that the stock is oversold relative to its recent volatility and a mean-reversion bounce is likely.
+- Short: Enter a short position when %B rises above 1.0 (price has exceeded the upper Bollinger Band), signaling that the stock is overbought and may revert downward.
+- Cash: Move to cash when %B is between 0.2 and 0.8, indicating the price is within the normal range of the bands and no strong mean-reversion signal exists.
+
+Trade Confirmation: A %B signal below 0 confirmed by RSI below 30 provides a high-confidence oversold signal. Similarly, %B above 1.0 with RSI above 70 strengthens the overbought signal.
+
+Filters: Rapid band expansion (indicating a volatility breakout) can be used as a filter to avoid entering mean-reversion trades during trending markets, where the price may continue moving outside the bands for an extended period.
+
+Chart: See Figure 6 — JPM Bollinger Band Indicator (2008/1/1 to 2009/12/31). The chart shows %B oscillating between approximately -0.2 and 1.3, with frequent excursions outside the 0-to-1 range during the highly volatile 2008-2009 market.
+
+
+============================================================
+2. THEORETICALLY OPTIMAL STRATEGY (TOS)
+============================================================
+
+Description of Methodology:
+
+The Theoretically Optimal Strategy (TOS) leverages perfect knowledge of future prices — an assumption that is impossible in real trading but useful for establishing an upper bound on portfolio performance. The strategy operates under the following constraints: the maximum position at any time is 1000 shares long or 1000 shares short, commission is $0.00, and market impact is 0.00.
+
+The algorithm iterates through each trading day and examines the next day's price. If the next day's price is higher than today's price, the strategy ensures it holds a maximum long position of +1000 shares (buying whatever is necessary to reach that position). If the next day's price is lower, the strategy ensures it holds a maximum short position of -1000 shares (selling whatever is necessary). On the final trading day, the strategy closes any open position by trading back to 0 shares.
+
+This approach is optimal because it captures every upward and downward price movement. On any day where the price will rise, the strategy is fully long, and on any day where the price will fall, the strategy is fully short. Since there are no transaction costs, switching positions freely between +1000 and -1000 shares incurs no penalty.
+
+Assumptions:
+1. Perfect foresight: The strategy has complete knowledge of the next day's closing price.
+2. Zero transaction costs: No commissions or market impact are applied, allowing unlimited position switching.
+3. Instantaneous execution: All trades execute at the closing price with no slippage.
+4. The strategy closes all positions on the last trading day.
+
+Performance Chart:
+
+See Figure 1 — JPM Benchmark vs Theoretical Optimal Portfolio (2008/1/1 to 2009/12/31). The chart shows both portfolios normalized to 1.0 at the start. The benchmark (purple line) represents a buy-and-hold strategy of 1000 shares of JPM, which stays roughly flat over the period due to the 2008 financial crisis. The Theoretically Optimal Portfolio (red line) grows dramatically, reaching approximately 6.8x the initial value by exploiting every daily price movement.
+
+Performance Metrics Table:
+
++-------------------------------+--------------------+--------------------+
+| Metric                        | TOS Portfolio      | Benchmark          |
++-------------------------------+--------------------+--------------------+
+| Cumulative Return             |         5.786100   |         0.012300   |
+| Std Dev of Daily Returns      |         0.004170   |         0.014125   |
+| Mean of Daily Returns         |         0.002635   |         0.000116   |
++-------------------------------+--------------------+--------------------+
+
+The TOS portfolio achieved a cumulative return of 5.786100 (578.6%), vastly outperforming the benchmark's cumulative return of 0.012300 (1.23%). The TOS portfolio also exhibited a substantially lower standard deviation of daily returns (0.004170 vs. 0.014125), which is a consequence of the strategy always being on the correct side of each price movement — it captures gains consistently without suffering losses. The mean daily return of the TOS (0.002635) is over 22 times that of the benchmark (0.000116). These results confirm that the TOS establishes a theoretical upper bound that far exceeds what any practical strategy could achieve.

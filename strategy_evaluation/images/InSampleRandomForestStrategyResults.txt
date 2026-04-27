@@ -1,0 +1,16 @@
+Date Range: 2008-01-02 00:00:00 to 2009-12-31 00:00:00
+Sharpe Ratio of Benchmark: 0.130751
+Sharpe Ratio of manual Learner : 0.623133
+Sharpe Ratio of Random Forest Learner : 0.451447
+Cumulative Return of Benchmark: 0.012325
+Cumulative Return of manual Learner : 0.280678
+Cumulative Return of Random Forest Learner : 0.220953
+Standard Deviation of Benchmark: 0.014165
+Standard Deviation of manual Learner : 0.009885
+Standard Deviation of Random Forest Learner : 0.012280
+Average Daily Return of Benchmark: 0.000117
+Average Daily Return of manual Learner : 0.000388
+Average Daily Return of Random Forest Learner : 0.000349
+Final Benchmark Portfolio Value: 1.012325
+Final Manual Strategy Learner Portfolio Value: 1.280678
+Final Random Forest Learner Portfolio Value: 1.220953
